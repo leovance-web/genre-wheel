@@ -1,90 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Genre Wheel</title>
-<style>
-    body { 
-        background-color: #111; 
-        color: #fff; 
-        font-family: sans-serif; 
-        text-align: center; 
-        margin: 0; 
-        padding: 20px; 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Genre Wheel</title>
+
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --panel: #141414;
+      --text: #d0d0d0;
+      --muted: #888;
+      --red: #7a0000;
+      --red-bright: #a00000;
     }
-    input, button { 
-        margin: 10px; 
-        padding: 10px; 
-        font-size: 16px; 
-        border-radius: 5px;
-        border: none;
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    input { width: 60%; }
-    button { background-color: #800000; color: #fff; cursor: pointer; }
-    canvas { display: block; margin: 30px auto; background-color: #222; border-radius: 50%; }
-</style>
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header {
+      margin: 12px 0 8px;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      margin: 16px 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 18px solid var(--red-bright);
+      z-index: 5;
+    }
+
+    .spin-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 2px solid var(--red);
+      color: var(--text);
+      font-size: 14px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    .spin-btn:active {
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+
+    .controls {
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .controls input {
+      width: 100%;
+      padding: 12px;
+      background: #111;
+      border: 1px solid #333;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    .controls input::placeholder {
+      color: #666;
+    }
+
+    .list {
+      margin-top: 10px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 2px;
+      font-size: 13px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    .remove {
+      color: var(--red-bright);
+      cursor: pointer;
+    }
+
+    .footer {
+      margin-top: auto;
+      font-size: 10px;
+      color: #555;
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .footer:hover::after {
+      content: " — created by 404God";
+      color: #777;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="app">
+    <div class="header">Genre Wheel</div>
 
-<h1>Genre Wheel</h1>
-<input type="text" id="genre-input" placeholder="Add a genre">
-<button id="add-btn">Add</button>
-<canvas id="wheel" width="300" height="300"></canvas>
+    <div class="wheel-container">
+      <div class="pointer"></div>
+      <canvas id="wheel"></canvas>
+      <button class="spin-btn" id="spin">SPIN</button>
+    </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("genre-input");
-    const addBtn = document.getElementById("add-btn");
+    <div class="controls">
+      <input id="genreInput" type="text" placeholder="Add genre and press Enter" />
+      <div class="list" id="genreList"></div>
+    </div>
+
+    <div class="footer">an off-grid tool</div>
+  </div>
+
+  <script>
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spin");
+    const input = document.getElementById("genreInput");
+    const list = document.getElementById("genreList");
 
     let genres = [];
+    let rotation = 0;
+    let spinning = false;
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      drawWheel();
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
     function drawWheel() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (genres.length === 0) return;
+      const size = canvas.width;
+      const center = size / 2;
+      const radius = center - 4;
 
-        const radius = canvas.width / 2;
-        const center = { x: radius, y: radius };
-        const sliceAngle = (2 * Math.PI) / genres.length;
+      ctx.clearRect(0, 0, size, size);
 
-        genres.forEach((genre, i) => {
-            ctx.beginPath();
-            ctx.moveTo(center.x, center.y);
-            ctx.arc(center.x, center.y, radius, i * sliceAngle, (i + 1) * sliceAngle);
-            ctx.fillStyle = i % 2 === 0 ? "#333" : "#555";
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+      if (genres.length === 0) {
+        ctx.beginPath();
+        ctx.arc(center, center, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        return;
+      }
 
-            // text
-            ctx.save();
-            ctx.translate(center.x, center.y);
-            ctx.rotate(i * sliceAngle + sliceAngle / 2);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "#fff";
-            ctx.font = "14px sans-serif";
-            ctx.fillText(genre, radius - 10, 0);
-            ctx.restore();
-        });
+      const slice = (Math.PI * 2) / genres.length;
+
+      genres.forEach((genre, i) => {
+        const angle = rotation + i * slice;
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, radius, angle, angle + slice);
+        ctx.closePath();
+
+        ctx.fillStyle = i % 2 === 0 ? "#1a1a1a" : "#111";
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(angle + slice / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#d0d0d0";
+        ctx.font = "13px sans-serif";
+        ctx.fillText(genre.toUpperCase(), radius - 10, 4);
+        ctx.restore();
+      });
     }
 
-    function addGenre() {
-        const value = input.value.trim();
-        if (value !== "" && !genres.includes(value)) {
-            genres.push(value);
-            input.value = "";
-            drawWheel();
+    function spinWheel() {
+      if (spinning || genres.length === 0) return;
+      spinning = true;
+
+      const spins = Math.random() * 5 + 5;
+      const target = rotation + spins * Math.PI * 2;
+      const start = rotation;
+      const duration = 2500;
+      const startTime = performance.now();
+
+      function animate(time) {
+        const t = Math.min((time - startTime) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        rotation = start + (target - start) * ease;
+        drawWheel();
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          rotation %= Math.PI * 2;
+          spinning = false;
         }
+      }
+
+      requestAnimationFrame(animate);
     }
 
-    addBtn.addEventListener("click", addGenre);
-    input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") addGenre();
-    });
-});
-</script>
+    spinBtn.addEventListener("click", spinWheel);
 
+    function addGenre(value) {
+      value = value.trim();
+      if (value && !genres.includes(value)) {
+        genres.push(value);
+        renderList();
+        drawWheel();
+      }
+    }
+
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        addGenre(input.value);
+        input.value = "";
+      }
+    });
+
+    function renderList() {
+      list.innerHTML = "";
+      genres.forEach((g, i) => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        const spanText = document.createElement("span");
+        spanText.textContent = g;
+
+        const removeBtn = document.createElement("span");
+        removeBtn.className = "remove";
+        removeBtn.textContent = "✕";
+        removeBtn.onclick = () => {
+          genres.splice(i, 1);
+          renderList();
+          drawWheel();
+        };
+
+        item.appendChild(spanText);
+        item.appendChild(removeBtn);
+        list.appendChild(item);
+      });
+    }
+  </script>
 </body>
 </html>
