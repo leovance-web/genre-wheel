@@ -15,10 +15,7 @@
       --red-bright: #a00000;
     }
 
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
     body {
       margin: 0;
@@ -29,119 +26,33 @@
       min-height: 100vh;
     }
 
-    .app {
-      width: 100%;
-      max-width: 420px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+    .app { width: 100%; max-width: 420px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
 
-    .header {
-      margin: 12px 0 8px;
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
+    .header { margin: 12px 0 8px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
 
-    .wheel-container {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      margin: 16px 0;
-    }
-
-    canvas {
-      width: 100%;
-      height: 100%;
-    }
-
-    .pointer {
-      position: absolute;
-      top: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-bottom: 18px solid var(--red-bright);
-      z-index: 5;
-    }
+    .wheel-container { position: relative; width: 100%; aspect-ratio: 1 / 1; margin: 16px 0; }
+    canvas { width: 100%; height: 100%; }
+    .pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 18px solid var(--red-bright); z-index: 5; }
 
     .spin-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      background: var(--panel);
-      border: 2px solid var(--red);
-      color: var(--text);
-      font-size: 14px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      z-index: 3;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 90px; height: 90px; border-radius: 50%; background: var(--panel);
+      border: 2px solid var(--red); color: var(--text); font-size: 14px; letter-spacing: 2px; cursor: pointer; z-index: 3;
     }
+    .spin-btn:active { transform: translate(-50%, -50%) scale(0.96); }
 
-    .spin-btn:active {
-      transform: translate(-50%, -50%) scale(0.96);
-    }
-
-    .controls {
-      width: 100%;
-      margin-top: 16px;
-    }
-
+    .controls { width: 100%; margin-top: 16px; }
     .controls input {
-      width: 100%;
-      padding: 12px;
-      background: #111;
-      border: 1px solid #333;
-      color: var(--text);
-      outline: none;
-      font-size: 14px;
+      width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: var(--text); outline: none; font-size: 14px;
     }
+    .controls input::placeholder { color: #666; }
 
-    .controls input::placeholder {
-      color: #666;
-    }
+    .list { margin-top: 10px; max-height: 140px; overflow-y: auto; }
+    .list-item { display: flex; justify-content: space-between; padding: 6px 2px; font-size: 13px; border-bottom: 1px solid #1f1f1f; }
+    .remove { color: var(--red-bright); cursor: pointer; }
 
-    .list {
-      margin-top: 10px;
-      max-height: 140px;
-      overflow-y: auto;
-    }
-
-    .list-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 2px;
-      font-size: 13px;
-      border-bottom: 1px solid #1f1f1f;
-    }
-
-    .remove {
-      color: var(--red-bright);
-      cursor: pointer;
-    }
-
-    .footer {
-      margin-top: auto;
-      font-size: 10px;
-      color: #555;
-      opacity: 0.6;
-      cursor: default;
-    }
-
-    .footer:hover::after {
-      content: " — created by 404God";
-      color: #777;
-    }
+    .footer { margin-top: auto; font-size: 10px; color: #555; opacity: 0.6; cursor: default; }
+    .footer:hover::after { content: " — created by 404God"; color: #777; }
   </style>
 </head>
 
@@ -179,7 +90,6 @@
       canvas.height = canvas.offsetHeight;
       drawWheel();
     }
-
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
@@ -270,20 +180,21 @@
 
     function renderList() {
       list.innerHTML = "";
-      genres.forEach((g, i) => {
+      genres.forEach((genre, index) => {
         const item = document.createElement("div");
         item.className = "list-item";
+
         const spanText = document.createElement("span");
-        spanText.textContent = g;
+        spanText.textContent = genre;
 
         const removeBtn = document.createElement("span");
         removeBtn.className = "remove";
         removeBtn.textContent = "✕";
-        removeBtn.onclick = () => {
-          genres.splice(i, 1);
+        removeBtn.addEventListener("click", () => {
+          genres.splice(index, 1);
           renderList();
           drawWheel();
-        };
+        });
 
         item.appendChild(spanText);
         item.appendChild(removeBtn);
